@@ -39,7 +39,8 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ps.Publish(c.Topic, c.Message)
-	log.Printf("Successfully published message to topic: %v", c.Topic)
+	w.Write([]byte("Message published successfully\n"))
+	w.(http.Flusher).Flush()
 	w.WriteHeader(http.StatusOK)
 }
 
