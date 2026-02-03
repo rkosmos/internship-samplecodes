@@ -38,6 +38,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ps.Publish(c.Topic, c.Message)
+	log.Printf("Successfully published message to topic: %v", c.Topic)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -54,6 +55,7 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ch := make(chan string)
 	ps.Subscribe(topic, ch)
+	log.Printf("Subscribed to topic: %v, waiting for messages...", topic)
 
 	for msg := range ch {
 		_, err := w.Write([]byte(msg + "\n"))
