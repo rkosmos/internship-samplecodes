@@ -49,12 +49,41 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check the topi from query parameters
 	topic := r.URL.Query().Get("topic")
 	if topic == "" {
 		http.Error(w, "Topic is required", http.StatusBadRequest)
 		return
 	}
-	ch := make(chan string)
+
+	// Clean up when done
+	ch := make(chan string, 1)
+	defer func() {
+		ps.mu.Lock()
+		defer ps.mu.Unlock()
+		for _, subscribers := range ps.topics {
+			for i, c := range subscribers {
+				if c == ch {
+					ps.topics[topic] = append(subscribers[:i], subscribers[i+1:]...)
+					close(c)
+
+				}
+			}
+		}
+	}()
+
+	// Listens for messages and writes them to the response
+	go func() {
+		for msg := range ch {
+			_, err := w.Write([]byte(msg + "\n"))
+			if err != nil {
+				return
+			}
+			w.(http.Flusher).Flush()
+		}
+	}()
+
+	// Subscribe to the topic, adds the channel to the list of subscribers
 	ps.Subscribe(topic, ch)
 	_, err := w.Write([]byte(fmt.Sprintf("Subscribed to topic: %v, waiting for messages...", topic)))
 	if err != nil {
@@ -62,14 +91,6 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.(http.Flusher).Flush()
-
-	for msg := range ch {
-		_, err := w.Write([]byte(msg + "\n"))
-		if err != nil {
-			return
-		}
-		w.(http.Flusher).Flush()
-	}
 }
 
 type PubSub struct {
