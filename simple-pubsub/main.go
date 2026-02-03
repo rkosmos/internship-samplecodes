@@ -40,7 +40,6 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ps.Publish(c.Topic, c.Message)
 	w.Write([]byte("Message published successfully\n"))
-	w.(http.Flusher).Flush()
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -82,7 +81,7 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 				if !ok {
 					return
 				}
-				_, err := w.Write([]byte("\n" + msg + "\n"))
+				_, err := w.Write([]byte(msg + "\n"))
 				if err != nil {
 					return
 				}
