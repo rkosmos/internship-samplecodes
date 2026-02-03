@@ -55,12 +55,6 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Topic is required", http.StatusBadRequest)
 		return
 	}
-	_, err := w.Write([]byte(fmt.Sprintf("Subscribed to topic: %v, waiting for messages...\n", topic)))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	w.(http.Flusher).Flush()
 
 	// Clean up when done
 	ch := make(chan string, 1)
@@ -100,6 +94,12 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Subscribe to the topic, adds the channel to the list of subscribers
 	ps.Subscribe(topic, ch)
+	_, err := w.Write([]byte(fmt.Sprintf("Subscribed to topic: %v, waiting for messages...\n", topic)))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.(http.Flusher).Flush()
 
 	<-wait
 }
